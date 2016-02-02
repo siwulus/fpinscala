@@ -1,15 +1,9 @@
 package fpinscala.datastructures
 
-sealed trait Tree[+A]{
-  def size(): Int
-}
-case class Leaf[A](value: A) extends Tree[A]{
-  def size() = 1
-}
+sealed trait Tree[+A]
+case class Leaf[A](value: A) extends Tree[A]
 
-case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]{
-  def size() = left.size() + right.size() + 1
-}
+case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
 
 
 object Tree {
@@ -20,7 +14,15 @@ object Tree {
     }
   }
 
+  def maximum(t: Tree[Int]): Int = t match {
+      case Leaf(v) => v
+      case Branch(l,r) => maximum(l).max(maximum(r))
+  }
 
+  def fold[A, B](t: Tree[A], z: A => B)(f: (B,B) => B): B = t match {
+    case Leaf(v) => z(v)
+    case Branch(l, r) => f(fold(l, z)(f), fold(r, z)(f))
+  }
 
 
 }
