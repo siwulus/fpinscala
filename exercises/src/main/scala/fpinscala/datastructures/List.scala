@@ -112,6 +112,18 @@ object List { // `List` companion object. Contains functions for creating and wo
   def doubleToString(dl: List[Double]): List[String] = foldRightAsFL(dl, Nil: List[String])((d,l) => Cons(d.toString, l))
 
   def map[A,B](l: List[A])(f: A => B): List[B] = foldRightAsFL(l, Nil: List[B])((a, b) => Cons(f(a), b))
+
+  def filter[A](as: List[A])(f: A => Boolean): List[A] = foldRightAsFL(as, Nil: List[A])((a, fl) => if (f(a)) Cons(a, fl) else fl)
+
+  def flatMap[A,B](as: List[A])(f: A => List[B]): List[B] = List.concat(List.map(as)(f))
+
+  def filter2[A](as: List[A])(f: A => Boolean): List[A]= flatMap(as)(a => if(f(a)) List(a) else Nil)
+
+  def zip[A](as: List[A], bl: List[A])(z: (A, A) => A): List[A] = (as, bl) match {
+    case (Cons(ha, ta), Cons(hb, tb)) => Cons(z(ha, hb), zip(ta, tb)(z))
+    case _ => Nil
+  }
+
 }
 
 object Main{
@@ -184,5 +196,35 @@ object Main{
     println(List.concat(Nil)) // Nil
     println(List.concat(List(Nil))) // Nil
     println(List.concat(List(List(1), List(2,3), List(4,5,6)))) // Nil
+
+    println
+    println("filter")
+    println(List.filter(Nil)(_=>true)) // Nil
+    println(List.filter(Nil)(_=>false)) // Nil
+    println(List.filter(List(1,2,3))(_=>false)) // Nil
+    println(List.filter(List(1,2,3))(_=>true)) // 1,2,3
+    println(List.filter(List(1,2,3,4))(x=>x % 2 == 0 )) // 2,4
+
+    println
+    println("filter2")
+    println(List.filter2(Nil)(_=>true)) // Nil
+    println(List.filter2(Nil)(_=>false)) // Nil
+    println(List.filter2(List(1,2,3))(_=>false)) // Nil
+    println(List.filter2(List(1,2,3))(_=>true)) // 1,2,3
+    println(List.filter2(List(1,2,3,4))(x=>x % 2 == 0 )) // 2,4
+
+
+    println
+    println("flatMap")
+    println(List.flatMap(List(1,2,3,4,5,6))(b => List(b.toString, "toString")))
+
+
+    println
+    println("zip")
+    println(List.zip(List(1), List(2))(_ + _))
+    println(List.zip(List(1,2,3,4), List(5,6,7,8))(_ + _))
+    println(List.zip(List(1,2,3,4), List(5,6,7,8,9,10))(_ + _))
+    println(List.zip(List(1,2,3,4,5,6,7), List(5,6,7,8))(_ + _))
+
   }
 }
