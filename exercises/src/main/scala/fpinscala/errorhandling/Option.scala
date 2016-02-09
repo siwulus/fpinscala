@@ -58,11 +58,44 @@ object Option {
     if (xs.isEmpty) None
     else Some(xs.sum / xs.length)
 
-  def variance(xs: Seq[Double]): Option[Double] = sys.error("todo")
+  def variance(xs: Seq[Double]): Option[Double] =
+    mean(xs).flatMap(m => mean(xs.map(x => math.pow(x - m, 2))))
 
-  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = sys.error("todo")
+  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
+      a.flatMap(aa => b.map(bb => f(aa,bb)))
 
-  def sequence[A](a: List[Option[A]]): Option[List[A]] = sys.error("todo")
+  def sequence[A](a: List[Option[A]]): Option[List[A]] = a match {
+      case h::t => map2(h, sequence(t))((hh, aa) => hh::aa)
+      case Nil => Some(Nil)
+  }
+
+  def sequence_1[A](a: List[Option[A]]): Option[List[A]] = a match {
+    case h::t => h.flatMap (hh => sequence_1(t).map(hh::_))
+    case Nil => Some(Nil)
+  }
+
 
   def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = sys.error("todo")
+}
+
+object OptionRun{
+
+  import Option._
+
+  def main(args: Array[String]) {
+    println("sequence")
+    println(sequence(Nil))
+    println(sequence(List()))
+    println(sequence(List(Some(1))))
+    println(sequence(List(None)))
+    println(sequence(List(Some(1),Some(2),Some(3),Some(4),Some(5))))
+    println(sequence(List(Some(1),Some(2),None,Some(4),Some(5))))
+    println("sequence_1")
+    println(sequence_1(Nil))
+    println(sequence_1(List()))
+    println(sequence_1(List(Some(1))))
+    println(sequence_1(List(None)))
+    println(sequence_1(List(Some(1),Some(2),Some(3),Some(4),Some(5))))
+    println(sequence_1(List(Some(1),Some(2),None,Some(4),Some(5))))
+  }
 }
