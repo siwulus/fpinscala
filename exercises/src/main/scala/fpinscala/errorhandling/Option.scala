@@ -75,7 +75,17 @@ object Option {
   }
 
 
-  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = sys.error("todo")
+  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = a match{
+      case h::t => traverse(t)(f).flatMap((l => f(h).map(_::l)))
+      case Nil => Some(Nil)
+  }
+
+
+  def traverse_1[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = a match{
+    case h::t => map2(f(h), traverse_1(t)(f))(_::_)
+    case Nil => Some(Nil)
+  }
+
 }
 
 object OptionRun{
