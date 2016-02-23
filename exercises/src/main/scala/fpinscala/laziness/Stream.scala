@@ -106,6 +106,26 @@ trait Stream[+A] {
       case _ => None
     })
 
+  def zipWith[B, C](s: Stream[B])(f: (A, B) => C): Stream[C] =
+    unfold((this,s))((ss) => ss match{
+      case (Cons(h1, t1), Cons(h2, t2)) => Some(f(h1(), h2()), (t1(), t2()))
+      case _ => None
+    })
+
+  def zipAllWith[B, C](s: Stream[B])(f: (Option[A],Option[B]) => C): Stream[C] =
+    unfold((this,s))((ss) => ss match{
+      case (Cons(h1, t1), Cons(h2, t2)) => Some(f(Some(h1()), Some(h2())), (t1(), t2()))
+      case (Empty, Cons(h2, t2)) => Some(f(None, Some(h2())), (Empty, t2()))
+      case (Cons(h1, t1), Empty) => Some(f(Some(h1()), None), (t1(), Empty))
+      case _ => None
+    })
+
+  def zipAll[B](s: Stream[B]): Stream[(Option[A], Option[B])] =
+    this.zipAllWith(s)((_,_))
+
+  def hasSubsequence(s: Stream[A]): Boolean =
+    this.foldRight((true, s))((a, z) => {})
+
   def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
 }
 case object Empty extends Stream[Nothing]
