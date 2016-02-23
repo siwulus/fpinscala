@@ -79,7 +79,7 @@ trait Stream[+A] {
   def map[B](f: A => B): Stream[B] =
     this.foldRight(Empty:Stream[B])((h,t) => cons(f(h), t))
 
-  def filter(f: A => Boolean):Stream[A] =
+    def filter(f: A => Boolean):Stream[A] =
     this.foldRight(Empty:Stream[A])((h,t) => if (f(h)) cons(h, t) else t)
 
   def append[B>:A](s: => Stream[B]): Stream[B] =
@@ -88,7 +88,23 @@ trait Stream[+A] {
   def flatMap[B](f: A => Stream[B]): Stream[B] =
     foldRight(Empty:Stream[B])((h,t) => f(h).append(t))
 
+  def mapViaUnfold[B](f: A => B): Stream[B] =
+    unfold(this)(s => s match {
+      case Cons(h, t) => Some(f(h()), t())
+      case _ => None
+    })
 
+  def takeViaUnfold(n: Int): Stream[A] =
+    unfold((n,this))(s => s match {
+      case (n, Cons(h, t)) if n > 0 => Some(h(), (n - 1, t()))
+      case _ => None
+    })
+
+  def takeWhileViaUnfold(p: A => Boolean): Stream[A] =
+    unfold(this)(s => s match {
+      case Cons(h, t) if p(h()) => Some(h(), t())
+      case _ => None
+    })
 
   def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
 }
@@ -118,19 +134,42 @@ object Stream {
   def constant_1[A](a: A): Stream[A] =
     cons(a, constant_1(a))
 
-
+  def fib():Stream[Int] = {
+    def go(m: Int, n: Int):Stream[Int] = {
+      cons(m, go(n, m + n))
+    }
+    go(0,1)
+  }
 
   def from(n: Int): Stream[Int] = cons(n, from(n + 1))
 
-  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = sys.error("todo")
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] =
+    f(z).map((x: (A, S)) => cons(x._1, unfold(x._2)(f))).getOrElse(empty)
+
+  def fib_1():Stream[Int] =
+    unfold[Int,(Int, Int)]((0,1))(z => Some(z._1,(z._2, z._1 + z._2)))
+
+  def from_1(n: Int): Stream[Int] =
+    unfold(n)(x => Some(x, x + 1))
+
+  def constant_2[A](a: A): Stream[A] =
+    unfold(a)(a => Some(a,a))
+
+  val ones_1 = constant_2(1)
 }
 
 object StreamMain{
   def main(args: Array[String]) {
-    //println(Stream.empty.headOption)
-    //println(Stream(1,2,3,4).headOption)
-    //println(Stream(1,2,3,4,5).foldRight(empty)((h,t) => {println(h + ", " + t); empty}))
-    println(from(3).take(5).toList)
-
+    //println(fib().takeViaUnfold(7).toList)
+    //println(empty.takeViaUnfold(7).toList)
+    println(fib().takeWhileViaUnfold(_ < 9).toList)
+    //println(fib().mapViaUnfold(_ + 1).takeViaUnfold(7).toList)
+    //println(empty[Int].mapViaUnfold(_ + 1).takeViaUnfold(7).toList)
+//    println(fib_1().take(7).toList)
+//    println(from(5).take(7).toList)
+//    println(from_1(5).take(7).toList)
+//    println(constant(2).take(7).toList)
+//    println(constant_2(2).take(7).toList)
+//    println(ones_1.take(7).toList)
   }
 }
