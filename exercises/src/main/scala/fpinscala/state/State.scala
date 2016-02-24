@@ -1,5 +1,6 @@
 package fpinscala.state
 
+import fpinscala.state.RNG._
 
 trait RNG {
   def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
@@ -30,19 +31,60 @@ object RNG {
       (f(a), rng2)
     }
 
-  def nonNegativeInt(rng: RNG): (Int, RNG) = ???
+  def nonNegativeInt(rng: RNG): (Int, RNG) = {
+    val (i, r) = rng.nextInt
+    if(i < 0) (-(i + 1), r) else (i, r)
+  }
 
-  def double(rng: RNG): (Double, RNG) = ???
+  def double(rng: RNG): (Double, RNG) = {
+    val (i,r) = nonNegativeInt(rng)
+    (i / (Int.MaxValue.toDouble  + 1), r)
+  }
 
-  def intDouble(rng: RNG): ((Int,Double), RNG) = ???
+  def doubleViaMap: Rand[Double] = map(nonNegativeInt)(_/(Int.MaxValue.toDouble  + 1))
 
-  def doubleInt(rng: RNG): ((Double,Int), RNG) = ???
+  def intDouble(rng: RNG): ((Int,Double), RNG) = {
+    val (i, r1) = nonNegativeInt(rng)
+    val (d, r2) = double(r1)
+    ((i, d), r2)
+  }
 
-  def double3(rng: RNG): ((Double,Double,Double), RNG) = ???
+  def intDoubleViaMap2: Rand[(Int, Double)] = map2(nonNegativeInt, doubleViaMap)((_,_))
 
-  def ints(count: Int)(rng: RNG): (List[Int], RNG) = ???
 
-  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
+  def doubleInt(rng: RNG): ((Double,Int), RNG) = {
+    val ((i, d), r) = intDouble(rng)
+    ((d, i), r)
+  }
+
+  def doubleIntViaMap2: Rand[(Double,Int)] = map2(doubleViaMap, nonNegativeInt)((_,_))
+
+
+  def double3(rng: RNG): ((Double,Double,Double), RNG) = {
+    val (d1, r1) = double(rng)
+    val (d2, r2) = double(r1)
+    val (d3, r3) = double(r2)
+    ((d1, d2, d3),r3)
+  }
+
+  def ints(count: Int)(rng: RNG): (List[Int], RNG) = {
+    def go(n: Int, r: (Int, RNG), acc:List[Int]):(List[Int], RNG) = {
+      if (n > 0)
+        go(n - 1, RNG.nonNegativeInt(r._2), r._1::acc)
+      else
+        (acc, r._2)
+    }
+    go(count, RNG.nonNegativeInt(rng), List())
+  }
+
+  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+    rng => {
+      val (a, r1) = ra(rng)
+      val (b, r2) = rb(r1)
+      (f(a,b), r2)
+    }
+
+
 
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = ???
 
@@ -67,4 +109,11 @@ case class Machine(locked: Boolean, candies: Int, coins: Int)
 object State {
   type Rand[A] = State[RNG, A]
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+}
+
+object StateMain{
+  def main(args: Array[String]) {
+    println(doubleViaMap(Simple(1)))
+
+  }
 }
