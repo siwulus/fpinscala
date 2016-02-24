@@ -123,11 +123,28 @@ trait Stream[+A] {
   def zipAll[B](s: Stream[B]): Stream[(Option[A], Option[B])] =
     this.zipAllWith(s)((_,_))
 
-  def hasSubsequence(s: Stream[A]): Boolean =
-    this.foldRight((true, s))((a, z) => {})
+//  def hasSubsequence(s: Stream[A]): Boolean =
+//    this.foldRight((true, s))((a, z) => {})
 
-  def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
+  def startsWith[B](s: Stream[B]): Boolean = (this, s) match {
+    case (Cons(h1, t1), Cons(h2, t2)) => if (h1() == h2()) t1().startsWith(t2()) else false
+    case (Empty, Cons(_,_)) => false
+    case (Cons(_,_), Empty) => true
+    case (Empty, Empty) => true
+  }
+
+  def startsWithViaZipAll[B](s: Stream[B]): Boolean =
+    zipAll(s).takeWhile(!_._2.isEmpty).forAll{case (a,b) => a == b}
+
+  def tails: Stream[Stream[A]] =
+    unfold(this)(s => s match{
+      case Empty => None
+      case s => Some((s, s.drop(1)))
+    })
+
+
 }
+
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
 
@@ -180,9 +197,16 @@ object Stream {
 
 object StreamMain{
   def main(args: Array[String]) {
+    println(Stream(1,2,3,4,5).tails.map(_.toList).toList)
+//    println(Stream(1,2,3,4).startsWithViaZipAll(Stream(1,2)))
+//    println(Stream(1,2,3,4).startsWithViaZipAll(Stream(2)))
+//    println(Stream(1,2,3,4).startsWithViaZipAll(empty))
+//    println(empty.startsWithViaZipAll(empty))
+//    println(empty.startsWithViaZipAll(Stream(1,2,3)))
+//    println(Stream(1,2,3,4).startsWith(Stream(1,2,3,4)))
     //println(fib().takeViaUnfold(7).toList)
     //println(empty.takeViaUnfold(7).toList)
-    println(fib().takeWhileViaUnfold(_ < 9).toList)
+    //println(fib().takeWhileViaUnfold(_ < 9).toList)
     //println(fib().mapViaUnfold(_ + 1).takeViaUnfold(7).toList)
     //println(empty[Int].mapViaUnfold(_ + 1).takeViaUnfold(7).toList)
 //    println(fib_1().take(7).toList)
