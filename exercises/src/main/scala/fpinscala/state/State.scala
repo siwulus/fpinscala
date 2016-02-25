@@ -36,6 +36,8 @@ object RNG {
     if(i < 0) (-(i + 1), r) else (i, r)
   }
 
+  val nonNegativeIntRand: Rand[Int] = nonNegativeInt
+
   def double(rng: RNG): (Double, RNG) = {
     val (i,r) = nonNegativeInt(rng)
     (i / (Int.MaxValue.toDouble  + 1), r)
@@ -86,7 +88,19 @@ object RNG {
 
 
 
-  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = ???
+  // List(double, double, double) => double(List(1,2))
+  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = rnd => {
+    fs.foldRight((List[A](), rnd))((rand: Rand[A], z:(List[A], RNG)) => z match {
+      case (l, r1) =>
+        val (a, r2) = rand(r1)
+        (l:::List(a), r2)
+    })
+  }
+
+  def sequenceViaUnit[A](fs: List[Rand[A]]): Rand[List[A]] =
+    fs.foldRight(unit(List[A]()))((ra, z) => map2(ra, z)(_::_))
+
+
 
   def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ???
 }
@@ -113,7 +127,8 @@ object State {
 
 object StateMain{
   def main(args: Array[String]) {
-    println(doubleViaMap(Simple(1)))
+    println(sequence(List.fill(5)(nonNegativeIntRand))(Simple(1)))
+    println(sequenceViaUnit(List.fill(5)(nonNegativeIntRand))(Simple(1)))
 
   }
 }
