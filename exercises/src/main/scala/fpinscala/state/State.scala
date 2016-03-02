@@ -89,7 +89,7 @@ object RNG {
       (f(a,b), r2)
     }
 
-  def map2ViaFlatMap[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+  def map2ViaFlatMap[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
 
 
   // List(double, double, double) => double(List(1,2))
@@ -114,8 +114,8 @@ object RNG {
 }
 
 case class State[S,+A](run: S => (A, S)) {
-  def map[B](f: A => B): State[S, B] =
-    flatMap()
+  def map[B](f: A => B): State[S, B] = ???
+    //flatMap()
 
   def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
     State(s => {
